@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sensor Data Visualization</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fb;
+      color: #111;
+      padding: 30px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #0a66c2;
+      margin-bottom: 40px;
+    }
+
+    .plot {
+      width: 100%;
+      height: 400px;
+      margin-bottom: 40px;
+      background-color: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <h1>Live Sensor Dashboard</h1>
+
+  <div id="tempPlot" class="plot"></div>
+  <div id="humidPlot" class="plot"></div>
+  <div id="currentPlot" class="plot"></div>
+  <div id="voltagePlot" class="plot"></div>
+  <div id="vibrationPlot" class="plot"></div>
+
+  <script>
+    async function fetchData() {
+      const response = await fetch('/history');
+      const data = await response.json();
+      return data.reverse(); // Newest last
+    }
+
+    async function renderPlots() {
+      const data = await fetchData();
+
+      const timestamps = data.map(row => row.timestamp.replace(" ", "T"));
+      const temperatures = data.map(row => parseFloat(row.temperature));
+      const humidities = data.map(row => parseFloat(row.humidity));
+      const currents = data.map(row => parseFloat(row.current));
+      const voltages = data.map(row => parseFloat(row.voltage));
+      const vibrations = data.map(row => parseFloat(row.vibration));
+
+      const layoutBase = {
+        plot_bgcolor: '#fff',
+        paper_bgcolor: '#fff',
+        font: { color: '#111' },
+        xaxis: {
+          title: 'Time',
+          type: 'date',
+          tickformat: '%H:%M:%S',
+          titlefont: { size: 14 }
+        },
+        yaxis: { titlefont: { size: 14 } },
+        margin: { t: 50, r: 30, b: 50, l: 60 }
+      };
+
+      Plotly.newPlot('tempPlot', [{
+        x: timestamps, y: temperatures, type: 'scatter', mode: 'lines+markers',
+        name: 'Temperature (°C)', line: { color: 'orange' }
+      }], { ...layoutBase, title: 'Temperature (°C)' });
+
+      Plotly.newPlot('humidPlot', [{
+        x: timestamps, y: humidities, type: 'scatter', mode: 'lines+markers',
+        name: 'Humidity (%)', line: { color: 'deepskyblue' }
+      }], { ...layoutBase, title: 'Humidity (%)' });
+
+      Plotly.newPlot('currentPlot', [{
+        x: timestamps, y: currents, type: 'scatter', mode: 'lines+markers',
+        name: 'Current (A)', line: { color: 'limegreen' }
+      }], { ...layoutBase, title: 'Current (A)' });
+
+      Plotly.newPlot('voltagePlot', [{
+        x: timestamps, y: voltages, type: 'scatter', mode: 'lines+markers',
+        name: 'Voltage (V)', line: { color: 'mediumpurple' }
+      }], { ...layoutBase, title: 'Voltage (V)' });
+
+      Plotly.newPlot('vibrationPlot', [{
+        x: timestamps, y: vibrations, type: 'scatter', mode: 'lines+markers',
+        name: 'Vibration (ADC)', line: { color: 'teal' }
+      }], { ...layoutBase, title: 'Vibration (ADC Value from STM32)' });
+    }
+
+    renderPlots();
+    setInterval(renderPlots, 5000); // Refresh every 5s
+  </script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prediction Status</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f8f9fb;
+      color: #111;
+      padding: 40px 20px;
+    }
+
+    /* Centered main content */
+    main {
+      text-align: center;
+      max-width: 800px;
+      margin: auto;
+      padding: 40px 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+      font-size: 2.2rem;
+      color: #0a66c2;
+      margin-bottom: 25px;
+      font-weight: 600;
+    }
+
+    .status {
+      font-size: 1.5rem;
+      margin: 20px 0;
+      color: #444;
+    }
+
+    #condition {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #0a66c2;
+    }
+
+    #failure-time {
+      font-size: 1.3rem;
+      color: #555;
+    }
+
+    #error {
+      color: red;
+      margin-top: 20px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h2>Machine Condition Prediction</h2>
+    <div class="status" id="condition">Loading...</div>
+    <div class="status" id="failure-time">Time to failure: --</div>
+    <div id="error"></div>
+  </main>
+
+  <script>
+    async function getPrediction() {
+      try {
+        const res = await fetch("/predict");
+        const data = await res.json();
+
+        if (res.ok) {
+          const map = ["Good", "Warning", "Critical"];
+          document.getElementById("condition").textContent = "Condition: " + map[data.anomaly];
+
+          const now = new Date();
+          const failureTime = new Date(now.getTime() + data.time_to_failure * 1000);
+          document.getElementById("failure-time").textContent = "Time to failure: " + failureTime.toLocaleString();
+          document.getElementById("error").textContent = "";
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (err) {
+        document.getElementById("error").textContent = "Error: " + err.message;
+      }
+    }
+
+    getPrediction();
+    setInterval(getPrediction, 30000); // Refresh every 30s
+  </script>
+</body>
+</html>
